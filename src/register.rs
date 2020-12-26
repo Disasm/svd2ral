@@ -49,12 +49,14 @@ pub struct UnsafeRWRegister<T> {
 
 impl<T: Copy> UnsafeRWRegister<T> {
     /// Reads the value of the register.
+    #[allow(clippy::missing_safety_doc)]
     #[inline(always)]
     pub unsafe fn read(&self) -> T {
         ::core::ptr::read_volatile(self.register.get())
     }
 
     /// Writes a new value to the register.
+    #[allow(clippy::missing_safety_doc)]
     #[inline(always)]
     pub unsafe fn write(&self, val: T) {
         ::core::ptr::write_volatile(self.register.get(), val)
@@ -99,6 +101,7 @@ pub struct UnsafeRORegister<T> {
 
 impl<T: Copy> UnsafeRORegister<T> {
     /// Reads the value of the register.
+    #[allow(clippy::missing_safety_doc)]
     #[inline(always)]
     pub unsafe fn read(&self) -> T {
         ::core::ptr::read_volatile(self.register.get())
@@ -143,6 +146,7 @@ pub struct UnsafeWORegister<T> {
 
 impl<T: Copy> UnsafeWORegister<T> {
     /// Writes a new value to the register.
+    #[allow(clippy::missing_safety_doc)]
     #[inline(always)]
     pub unsafe fn write(&self, val: T) {
         ::core::ptr::write_volatile(self.register.get(), val)

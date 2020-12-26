@@ -100,15 +100,13 @@ fn convert_register(register: &RegisterInfo) -> FinalRegisterInfo {
         access: register.access.unwrap(),
     };
 
-    let final_info = FinalRegisterInfo {
+    FinalRegisterInfo {
         name: register.name.clone(),
         description: register.description.clone(),
         address_offset: register.address_offset,
         properties,
         fields: final_fields,
-    };
-
-    final_info
+    }
 }
 
 trait RegisterPropertiesExt {
@@ -117,7 +115,7 @@ trait RegisterPropertiesExt {
 
 impl RegisterPropertiesExt for RegisterProperties {
     fn merge(&self, parent: &RegisterProperties) -> RegisterProperties {
-        let mut merged = parent.clone();
+        let mut merged = *parent;
 
         merged.size = self.size.or(parent.size);
         merged.reset_value = self.reset_value.or(parent.reset_value);
@@ -135,7 +133,7 @@ trait RegisterInfoExt {
 
 impl RegisterInfoExt for RegisterInfo {
     fn merge_properties(&self, parent: &RegisterProperties) -> RegisterProperties {
-        let mut merged = parent.clone();
+        let mut merged = *parent;
 
         merged.size = self.size.or(parent.size);
         merged.reset_value = self.reset_value.or(parent.reset_value);

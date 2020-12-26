@@ -10,7 +10,6 @@ mod convert;
 mod types;
 use types::*;
 
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AddressSize {
     U32,
@@ -83,7 +82,7 @@ pub mod metadata;
     let mut instance_names = Vec::new();
 
     for peripheral in &device.peripherals {
-        if ignore.iter().find(|v| *v == &peripheral.name).is_some() {
+        if ignore.iter().any(|v| v == &peripheral.name) {
             continue;
         }
 
@@ -99,7 +98,7 @@ pub mod metadata;
     }
 
     for instance in &device.instances {
-        if ignore.iter().find(|v| *v == &instance.name).is_some() {
+        if ignore.iter().any(|v| v == &instance.name) {
             continue;
         }
 
@@ -310,6 +309,7 @@ pub mod {name} {{
     /// This function is similar to take() but forcibly takes the
     /// Instance, marking it as taken irregardless of its previous
     /// state.
+    #[allow(clippy::missing_safety_doc)]
     #[inline]
     pub unsafe fn steal() -> Instance {{
         {name}_TAKEN = true;
@@ -321,6 +321,7 @@ pub mod {name} {{
     /// This will not check if `take()` or `steal()` have already been called
     /// before. It is the caller's responsibility to use the returned instance
     /// in a safe way that does not conflict with other instances.
+    #[allow(clippy::missing_safety_doc)]
     #[inline]
     pub unsafe fn conjure() -> Instance {{
         INSTANCE
