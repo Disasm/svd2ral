@@ -1,4 +1,4 @@
-use svd_parser::{BitRange, Access};
+use svd_parser::{Access, BitRange};
 
 pub struct ModelDevice {
     pub peripherals: Vec<ModelPeripheral>,

@@ -1,9 +1,9 @@
+use anyhow::Result;
 use std::collections::BTreeSet;
-use std::path::Path;
+use std::fmt::Write as _;
 use std::fs;
 use std::io::Write;
-use std::fmt::Write as _;
-use anyhow::Result;
+use std::path::Path;
 
 mod convert;
 
@@ -64,7 +64,9 @@ pub fn generate(xml: &str, output_dir: impl AsRef<Path>, address_size: AddressSi
     let mut instances_mod_rs = fs::File::create(instances_dir.join("mod.rs"))?;
     let mut metadata_rs = fs::File::create(soc_dir.join("metadata.rs"))?;
 
-    writeln!(mod_rs, "
+    writeln!(
+        mod_rs,
+        "
 /// Peripherals shared by multiple devices
 pub mod peripherals;
 
@@ -73,7 +75,8 @@ pub(crate) mod instances;
 
 /// Metadata
 pub mod metadata;
-")?;
+"
+    )?;
 
     let device = crate::convert::convert(&device);
 
@@ -173,7 +176,11 @@ fn write_peripheral(file: &mut fs::File, peripheral: &ModelPeripheral, address_s
             let doc = build_doc_comment("    ///", description);
             s += &doc;
         }
-        writeln!(s, "    pub {}: {}<{}>,", reg_info.name, access_type_name, size_type_name)?;
+        writeln!(
+            s,
+            "    pub {}: {}<{}>,",
+            reg_info.name, access_type_name, size_type_name
+        )?;
         register_block.push(s);
 
         // ResetValues entry
@@ -196,7 +203,9 @@ fn write_peripheral(file: &mut fs::File, peripheral: &ModelPeripheral, address_s
     writeln!(file, "{}", reset_values.join("\n"))?;
     writeln!(file, "}}")?;
 
-    writeln!(file, "
+    writeln!(
+        file,
+        "
 pub struct Instance {{
     pub(crate) addr: {},
     pub(crate) _marker: PhantomData<*const RegisterBlock>,
@@ -208,7 +217,9 @@ impl ::core::ops::Deref for Instance {{
     fn deref(&self) -> &RegisterBlock {{
         unsafe {{ &*(self.addr as *const _) }}
     }}
-}}", address_size.type_name())?;
+}}",
+        address_size.type_name()
+    )?;
 
     Ok(())
 }
@@ -220,7 +231,11 @@ fn write_peripheral_instance(file: &mut fs::File, instance: &ModelPeripheralInst
 
     let peripheral_mod = &instance.peripheral_module;
     writeln!(file, "pub use super::super::peripherals::{}::Instance;", peripheral_mod)?;
-    writeln!(file, "pub use super::super::peripherals::{}::{{RegisterBlock, ResetValues}};", peripheral_mod)?;
+    writeln!(
+        file,
+        "pub use super::super::peripherals::{}::{{RegisterBlock, ResetValues}};",
+        peripheral_mod
+    )?;
 
     let mut register_types = Vec::new();
     for value in &instance.reset_values {
@@ -228,11 +243,18 @@ fn write_peripheral_instance(file: &mut fs::File, instance: &ModelPeripheralInst
     }
 
     if !register_types.is_empty() {
-        writeln!(file, "pub use super::super::peripherals::{}::{{{}}};", peripheral_mod, register_types.join(", "))?;
+        writeln!(
+            file,
+            "pub use super::super::peripherals::{}::{{{}}};",
+            peripheral_mod,
+            register_types.join(", ")
+        )?;
     }
     writeln!(file)?;
 
-    write!(file, "
+    write!(
+        file,
+        "
 /// Access functions for the {name} peripheral instance
 pub mod {name} {{
     use super::ResetValues;
@@ -246,7 +268,8 @@ pub mod {name} {{
     /// Reset values for each field in {name}
     pub const reset: ResetValues = ResetValues {{
 ",
-        instance.base_address, name=instance.name
+        instance.base_address,
+        name = instance.name
     )?;
 
     let mut values = Vec::new();
@@ -255,7 +278,9 @@ pub mod {name} {{
     }
     write!(file, "{}", values.join("\n"))?;
 
-    writeln!(file, "
+    writeln!(
+        file,
+        "
     }};
 
     #[allow(renamed_and_removed_lints)]
@@ -338,7 +363,8 @@ pub mod {name} {{
 /// This constant is provided for ease of use in unsafe code: you can
 /// simply call for example `write_reg!(gpio, GPIOA, ODR, 1);`.
 pub const {name}: *const RegisterBlock = {:#x} as *const _;",
-        instance.base_address, name=instance.name
+        instance.base_address,
+        name = instance.name
     )?;
 
     Ok(())
@@ -362,19 +388,28 @@ impl Codegen for FinalFieldInfo {
 
         eprintln!("{} ({})", self.bit_range.width, self.name);
         let mask = (1u64 << self.bit_range.width) - 1;
-        write!(code, "
+        write!(
+            code,
+            "
     /// Mask ({} bit: {:#x} << {})
     pub const mask: u32 = {:#x} << offset;
-", self.bit_range.width, mask, self.bit_range.offset, mask).unwrap();
+",
+            self.bit_range.width, mask, self.bit_range.offset, mask
+        )
+        .unwrap();
 
-        writeln!(code, "
+        writeln!(
+            code,
+            "
     /// Read-only values (empty)
     pub mod R {{}}
     /// Write-only values (empty)
     pub mod W {{}}
     /// Read-write values (empty)
     pub mod RW {{}}
-").unwrap();
+"
+        )
+        .unwrap();
 
         writeln!(code, "}}").unwrap();
 

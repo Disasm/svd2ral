@@ -1,27 +1,31 @@
-use svd_parser::{Device, Peripheral, RegisterProperties, RegisterCluster, Register, RegisterInfo};
 use crate::types::*;
-
+use svd_parser::{Device, Peripheral, Register, RegisterCluster, RegisterInfo, RegisterProperties};
 
 pub fn convert(device: &Device) -> ModelDevice {
     let mut peripherals = Vec::new();
     let mut instances = Vec::new();
 
     for peripheral in &device.peripherals {
-        let default_register_properties = peripheral.default_register_properties.merge(&device.default_register_properties);
+        let default_register_properties = peripheral
+            .default_register_properties
+            .merge(&device.default_register_properties);
 
         let (p, i) = convert_peripheral(peripheral, &default_register_properties);
         peripherals.push(p);
         instances.push(i);
     }
 
-    ModelDevice {
-        peripherals,
-        instances,
-    }
+    ModelDevice { peripherals, instances }
 }
 
-pub fn convert_peripheral(peripheral: &Peripheral, default_register_properties: &RegisterProperties) -> (ModelPeripheral, ModelPeripheralInstance) {
-    assert!(peripheral.derived_from.is_none(), "Derived peripherals are not supported");
+pub fn convert_peripheral(
+    peripheral: &Peripheral,
+    default_register_properties: &RegisterProperties,
+) -> (ModelPeripheral, ModelPeripheralInstance) {
+    assert!(
+        peripheral.derived_from.is_none(),
+        "Derived peripherals are not supported"
+    );
 
     let doc = if let Some(description) = peripheral.description.as_ref() {
         description
@@ -38,9 +42,11 @@ pub fn convert_peripheral(peripheral: &Peripheral, default_register_properties: 
         for register_or_cluster in regs {
             let register = match register_or_cluster {
                 RegisterCluster::Register(register) => register,
-                RegisterCluster::Cluster(_) => unimplemented!("register clusters are not supported"),
+                RegisterCluster::Cluster(_) => {
+                    unimplemented!("register clusters are not supported")
+                }
             };
-    
+
             let info = match register {
                 Register::Single(info) => info,
                 Register::Array(_, _) => unimplemented!("register arrays are not supported"),
@@ -60,7 +66,6 @@ pub fn convert_peripheral(peripheral: &Peripheral, default_register_properties: 
             reset_values.push(reset_value);
         }
     }
-    
 
     let p = ModelPeripheral {
         name: peripheral.name.clone(),
