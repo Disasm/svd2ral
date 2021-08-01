@@ -17,7 +17,7 @@ pub struct ModelPeripheralInstance {
     pub description: String,
     pub module_name: String,
     pub peripheral_module: String,
-    pub base_address: u32, // Limitation of the parser
+    pub base_address: u64,
     pub reset_values: Vec<ResetValue>,
 }
 
