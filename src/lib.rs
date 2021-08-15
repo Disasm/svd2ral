@@ -10,6 +10,36 @@ mod convert;
 mod types;
 use types::*;
 
+pub struct GeneratorConfig {
+    pub address_size: AddressSize,
+    pub ignore: Vec<String>,
+}
+
+impl GeneratorConfig {
+    pub fn address_size(mut self, size: AddressSize) -> Self {
+        self.address_size = size;
+        self
+    }
+
+    pub fn ignore<I>(mut self, ignore: I) -> Self
+    where
+        I: IntoIterator,
+        I::Item: Into<String>,
+    {
+        self.ignore = ignore.into_iter().map(|s| s.into()).collect();
+        self
+    }
+}
+
+impl Default for GeneratorConfig {
+    fn default() -> Self {
+        GeneratorConfig {
+            address_size: AddressSize::U32,
+            ignore: Vec::new(),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AddressSize {
     U32,
@@ -40,7 +70,7 @@ mod stm32f1 {
 
 */
 
-pub fn generate(xml: &str, output_dir: impl AsRef<Path>, address_size: AddressSize, ignore: &[&str]) -> Result<()> {
+pub fn generate(xml: &str, output_dir: impl AsRef<Path>, config: &GeneratorConfig) -> Result<()> {
     let device = svd_parser::parse(xml)?;
 
     let soc_name = device.name.to_ascii_lowercase();
@@ -85,7 +115,7 @@ pub mod metadata;
     let mut instance_names = Vec::new();
 
     for peripheral in &device.peripherals {
-        if ignore.iter().any(|v| v == &peripheral.name) {
+        if config.ignore.iter().any(|v| v == &peripheral.name) {
             continue;
         }
 
@@ -95,13 +125,13 @@ pub mod metadata;
         let file_name = format!("{}.rs", peripheral.module_name);
         let mut peripheral_rs = fs::File::create(peripherals_dir.join(&file_name))?;
 
-        write_peripheral(&mut peripheral_rs, peripheral, address_size)?;
+        write_peripheral(&mut peripheral_rs, peripheral, config)?;
 
         peripheral_modules.push(peripheral.module_name.clone());
     }
 
     for instance in &device.instances {
-        if ignore.iter().any(|v| v == &instance.name) {
+        if config.ignore.iter().any(|v| v == &instance.name) {
             continue;
         }
 
@@ -136,7 +166,7 @@ pub mod metadata;
     Ok(())
 }
 
-fn write_peripheral(file: &mut fs::File, peripheral: &ModelPeripheral, address_size: AddressSize) -> Result<()> {
+fn write_peripheral(file: &mut fs::File, peripheral: &ModelPeripheral, config: &GeneratorConfig) -> Result<()> {
     writeln!(file, "#![allow(non_snake_case, non_upper_case_globals)]")?;
     writeln!(file, "#![allow(non_camel_case_types)]")?;
     writeln!(file, "{}", build_doc_comment("//!", &peripheral.description))?;
@@ -218,7 +248,7 @@ impl ::core::ops::Deref for Instance {{
         unsafe {{ &*(self.addr as *const _) }}
     }}
 }}",
-        address_size.type_name()
+        config.address_size.type_name()
     )?;
 
     Ok(())
