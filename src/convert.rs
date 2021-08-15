@@ -42,9 +42,7 @@ pub fn convert_peripheral(
         for register_or_cluster in regs {
             let register = match register_or_cluster {
                 RegisterCluster::Register(register) => register,
-                RegisterCluster::Cluster(_) => {
-                    unimplemented!("register clusters are not supported")
-                }
+                RegisterCluster::Cluster(_) => unimplemented!("register clusters are not supported"),
             };
 
             let info = match register {
