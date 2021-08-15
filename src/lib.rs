@@ -96,9 +96,6 @@ pub fn generate(xml: &str, output_dir: impl AsRef<Path>, config: &GeneratorConfi
     let instances_dir = soc_dir.join("instances");
     fs::create_dir(&instances_dir)?;
 
-    let register_rs = include_bytes!("register.rs");
-    fs::write(output_dir.as_ref().join("register.rs"), register_rs.as_ref())?;
-
     let mut mod_rs = fs::File::create(soc_dir.join("mod.rs"))?;
     let mut peripherals_mod_rs = fs::File::create(peripherals_dir.join("mod.rs"))?;
     let mut instances_mod_rs = fs::File::create(instances_dir.join("mod.rs"))?;
@@ -230,7 +227,7 @@ fn write_peripheral(file: &mut fs::File, peripheral: &ModelPeripheral, config: &
 
     let mut access_types: Vec<_> = access_types.iter().map(|s| s.to_string()).collect();
     access_types.sort();
-    writeln!(file, "use crate::{{{}}};", access_types.join(", "))?;
+    writeln!(file, "use ral_registers::{{{}}};", access_types.join(", "))?;
     writeln!(file, "use core::marker::PhantomData;\n")?;
 
     writeln!(file, "{}", register_modules.join("\n"))?;
