@@ -13,6 +13,7 @@ use types::*;
 pub struct GeneratorConfig {
     pub address_size: AddressSize,
     pub ignore: Vec<String>,
+    pub arch_crate: String,
 }
 
 impl GeneratorConfig {
@@ -29,6 +30,14 @@ impl GeneratorConfig {
         self.ignore = ignore.into_iter().map(|s| s.into()).collect();
         self
     }
+
+    pub fn arch_crate<S>(mut self, path: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.arch_crate = path.into();
+        self
+    }
 }
 
 impl Default for GeneratorConfig {
@@ -36,6 +45,7 @@ impl Default for GeneratorConfig {
         GeneratorConfig {
             address_size: AddressSize::U32,
             ignore: Vec::new(),
+            arch_crate: "crate::arch".to_string(),
         }
     }
 }
@@ -141,7 +151,7 @@ pub mod metadata;
         let file_name = format!("{}.rs", instance.module_name);
         let mut instance_rs = fs::File::create(instances_dir.join(&file_name))?;
 
-        write_peripheral_instance(&mut instance_rs, instance)?;
+        write_peripheral_instance(&mut instance_rs, instance, config)?;
 
         instance_modules.push(instance.module_name.clone());
         instance_names.push(instance.name.clone());
@@ -254,7 +264,11 @@ impl ::core::ops::Deref for Instance {{
     Ok(())
 }
 
-fn write_peripheral_instance(file: &mut fs::File, instance: &ModelPeripheralInstance) -> Result<()> {
+fn write_peripheral_instance(
+    file: &mut fs::File,
+    instance: &ModelPeripheralInstance,
+    config: &GeneratorConfig,
+) -> Result<()> {
     writeln!(file, "#![allow(non_snake_case, non_upper_case_globals)]")?;
     writeln!(file, "#![allow(non_camel_case_types)]")?;
     writeln!(file, "{}", build_doc_comment("//!", &instance.description))?;
@@ -332,7 +346,7 @@ pub mod {name} {{
     /// provides access to the peripheral's registers.
     #[inline]
     pub fn take() -> Option<Instance> {{
-        crate::arch::interrupt::free(|_| unsafe {{
+        {arch_crate}::interrupt::free(|_| unsafe {{
             if {name}_TAKEN {{
                 None
             }} else {{
@@ -350,7 +364,7 @@ pub mod {name} {{
     /// already taken.
     #[inline]
     pub fn release(inst: Instance) {{
-        crate::arch::interrupt::free(|_| unsafe {{
+        {arch_crate}::interrupt::free(|_| unsafe {{
             if {name}_TAKEN && inst.addr == INSTANCE.addr {{
                 {name}_TAKEN = false;
             }} else {{
@@ -394,6 +408,7 @@ pub mod {name} {{
 /// simply call for example `write_reg!(gpio, GPIOA, ODR, 1);`.
 pub const {name}: *const RegisterBlock = {:#x} as *const _;",
         instance.base_address,
+        arch_crate = config.arch_crate,
         name = instance.name
     )?;
 
